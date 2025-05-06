@@ -48,6 +48,7 @@
 
 // 声明外部变量
 extern unsigned int code FreqTable[];    // 音符频率表
-extern unsigned char code Music[];       // 乐谱数据
 
+extern unsigned char code Music1[];
+extern unsigned char code Music2[];
 #endif

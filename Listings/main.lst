@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 13:57:03 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
@@ -12,178 +12,190 @@ line level    source
    2          #include "music_defs.h"
    3          #include "config.h"
    4          
-   5          // Timer0 中断服务函数 (蜂鸣器控制)
-   6          void Timer0_Routine() interrupt 1
-   7          {
-   8   1          if(FreqTable[FreqSelect])
-   9   1          {
-  10   2              TL0 = FreqTable[FreqSelect]%256;
-  11   2              TH0 = FreqTable[FreqSelect]/256;
-  12   2              BUZZER = !BUZZER;
-  13   2          }
-  14   1      }
-  15          
-  16          // Timer1 中断服务函数 (LED PWM控制)
-  17          void Timer1_ISR() interrupt 3
-  18          {
-  19   1          static unsigned char count = 0;
-  20   1          
-  21   1          if(count < g_duty)
-  22   1          {
-  23   2              P3 |= 0x04;     // LED点亮
-  24   2          }
-  25   1          else
-  26   1          {
-  27   2              P3 &= ~0x04;    // LED熄灭
-  28   2          }
-  29   1          
-  30   1          count++;
-  31   1          if(count >= 255)
-  32   1          {
-  33   2              count = 0;
-  34   2          }
-  35   1      }
-  36          
-  37          void main(void)
-  38          {
-  39   1          unsigned int hold_count = 0;
-  40   1          
-  41   1          initSystem();  // 初始化系统
-  42   1          
-  43   1          while(1)
-  44   1          {
-  45   2              // 按键检测和模式切换（带消抖）
-  46   2              if ((P5 & 0x20) == 0)  // 按键被按下
-  47   2              {
-  48   3                  if (g_button_previous == 1)
-  49   3                  {
-  50   4                      g_mode = (g_mode + 1) % 4;  // 在四种模式间循环
-  51   4                      
-  52   4                      // 模式切换处理
-  53   4                      switch(g_mode)
-  54   4                      {
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 13:57:03 PAGE 2   
+   5          #define MUSIC_PART2_START  280 
+   6          
+   7          // Timer0 中断服务函数 (蜂鸣器控制)
+   8          void Timer0_Routine() interrupt 1
+   9          {
+  10   1          if(FreqTable[FreqSelect])
+  11   1          {
+  12   2              TL0 = FreqTable[FreqSelect]%256;
+  13   2              TH0 = FreqTable[FreqSelect]/256;
+  14   2              BUZZER = !BUZZER;
+  15   2          }
+  16   1      }
+  17          
+  18          // Timer1 中断服务函数 (LED PWM控制)
+  19          void Timer1_ISR() interrupt 3
+  20          {
+  21   1          static unsigned char count = 0;
+  22   1          
+  23   1          if(count < g_duty)
+  24   1          {
+  25   2              P3 |= 0x04;     // LED点亮
+  26   2          }
+  27   1          else
+  28   1          {
+  29   2              P3 &= ~0x04;    // LED熄灭
+  30   2          }
+  31   1          
+  32   1          count++;
+  33   1          if(count >= 255)
+  34   1          {
+  35   2              count = 0;
+  36   2          }
+  37   1      }
+  38          
+  39          
+  40          
+  41          void main(void)
+  42          {
+  43   1          unsigned int hold_count = 0;
+  44   1          unsigned int musicPart = 0;  // 用于记录音乐播放的部分
+  45   1          unsigned char *currentMusic = Music1; // 当前播放的音乐数据指针
+  46   1          
+  47   1          initSystem();  // 初始化系统
+  48   1          
+  49   1          while(1)
+  50   1          {
+  51   2              // 按键检测和模式切换（带消抖）
+  52   2              if ((P5 & 0x20) == 0)  // 按键被按下
+  53   2              {
+  54   3                  if (g_button_previous == 1)
+C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 2   
 
-  55   5                          case 0:  // 常亮模式
-  56   5                              g_duty = MAX_DUTY;
-  57   5                              TR0 = 0;  // 停止蜂鸣器定时器
-  58   5                              BUZZER = 0;
-  59   5                              break;
-  60   5                          
-  61   5                          case 1:  // 呼吸灯模式
-  62   5                              TR0 = 0;  // 停止蜂鸣器定时器
-  63   5                              BUZZER = 0;
-  64   5                              break;
-  65   5                          
-  66   5                          case 2:  // 常亮+音乐模式
-  67   5                              g_duty = MAX_DUTY;  // LED常亮
-  68   5                              MusicSelect = 0;  // 重置音乐播放位置
-  69   5                              TR0 = 1;  // 启动蜂鸣器定时器
+  55   3                  {
+  56   4                      g_mode = (g_mode + 1) % 4;  // 在四种模式间循环
+  57   4                      
+  58   4                      // 模式切换处理
+  59   4                      switch(g_mode)
+  60   4                      {
+  61   5                          case 0:  // 常亮模式
+  62   5                              g_duty = MAX_DUTY;
+  63   5                              TR0 = 0;  // 停止蜂鸣器定时器
+  64   5                              BUZZER = 0;
+  65   5                              break;
+  66   5                          
+  67   5                          case 1:  // 呼吸灯模式
+  68   5                              TR0 = 0;  // 停止蜂鸣器定时器
+  69   5                              BUZZER = 0;
   70   5                              break;
-  71   5      
-  72   5                          case 3:  // 纯音乐模式
-  73   5                              g_duty = 0;  // LED关闭
+  71   5                          
+  72   5                          case 2:  // 常亮+音乐模式
+  73   5                              g_duty = MAX_DUTY;  // LED常亮
   74   5                              MusicSelect = 0;  // 重置音乐播放位置
-  75   5                              TR0 = 1;  // 启动蜂鸣器定时器
-  76   5                              break;
-  77   5                      }
-  78   4                  }
-  79   3                  g_button_previous = 0;
-  80   3              }
-  81   2              else
-  82   2              {
-  83   3                  g_button_previous = 1;
-  84   3              }
-  85   2              
-  86   2              // 模式运行逻辑
-  87   2              switch(g_mode)
-  88   2              {
-  89   3                  case 0:  // 常亮模式
-  90   3                      g_duty = MAX_DUTY;
-  91   3                      break;
-  92   3                  
-  93   3                  case 1:  // 呼吸灯模式
-  94   3                      // 在最亮或最暗处停留
-  95   3                      if(g_duty == MAX_DUTY || g_duty == MIN_DUTY)
-  96   3                      {
-  97   4                          for(hold_count = 0; hold_count < HOLD_TIME; hold_count++)
-  98   4                          {
-  99   5                              Delay_ms(1);
- 100   5                          }
- 101   4                      }
- 102   3                      
- 103   3                      // 更新亮度值
- 104   3                      if(g_direction == 0)
- 105   3                      {
- 106   4                          g_duty += BREATH_STEP;
- 107   4                          if(g_duty >= MAX_DUTY)
- 108   4                          {
- 109   5                              g_duty = MAX_DUTY;
- 110   5                              g_direction = 1;
- 111   5                          }
- 112   4                      }
- 113   3                      else
- 114   3                      {
- 115   4                          if(g_duty > MIN_DUTY + BREATH_STEP)
+  75   5                              musicPart = 0;    // 重置音乐部分
+  76   5                              TR0 = 1;  // 启动蜂鸣器定时器
+  77   5                              break;
+  78   5      
+  79   5                          case 3:  // 纯音乐模式
+  80   5                              g_duty = 0;  // LED关闭
+  81   5                              MusicSelect = 0;  // 重置音乐播放位置
+  82   5                              musicPart = 0;    // 重置音乐部分
+  83   5                              TR0 = 1;  // 启动蜂鸣器定时器
+  84   5                              break;
+  85   5                      }
+  86   4                  }
+  87   3                  g_button_previous = 0;
+  88   3              }
+  89   2              else
+  90   2              {
+  91   3                  g_button_previous = 1;
+  92   3              }
+  93   2              
+  94   2              // 模式运行逻辑
+  95   2              switch(g_mode)
+  96   2              {
+  97   3                  case 0:  // 常亮模式
+  98   3                      g_duty = MAX_DUTY;
+  99   3                      break;
+ 100   3                  
+ 101   3                  case 1:  // 呼吸灯模式
+ 102   3                      // 在最亮或最暗处停留
+ 103   3                      if(g_duty == MAX_DUTY || g_duty == MIN_DUTY)
+ 104   3                      {
+ 105   4                          for(hold_count = 0; hold_count < HOLD_TIME; hold_count++)
+ 106   4                          {
+ 107   5                              Delay_ms(1);
+ 108   5                          }
+ 109   4                      }
+ 110   3                      
+ 111   3                      // 更新亮度值
+ 112   3                      if(g_direction == 0)
+ 113   3                      {
+ 114   4                          g_duty += BREATH_STEP;
+ 115   4                          if(g_duty >= MAX_DUTY)
  116   4                          {
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 13:57:03 PAGE 3   
+C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 3   
 
- 117   5                              g_duty -= BREATH_STEP;
- 118   5                          }
- 119   4                          else
- 120   4                          {
- 121   5                              g_duty = MIN_DUTY;
- 122   5                              g_direction = 0;
- 123   5                          }
- 124   4                      }
- 125   3                      Delay_ms(BREATH_DELAY);
- 126   3                      break;
- 127   3                  
- 128   3                  case 2:  // 常亮+音乐模式
- 129   3                      g_duty = MAX_DUTY;  // 保持LED常亮
- 130   3                      if(Music[MusicSelect] != 0xFF)
- 131   3                      {
- 132   4                          FreqSelect = Music[MusicSelect];
- 133   4                          MusicSelect++;
- 134   4                          Delay_ms(SPEED/4*Music[MusicSelect]);
- 135   4                          MusicSelect++;
- 136   4                          TR0 = 0;
- 137   4                          Delay_ms(5);
- 138   4                          TR0 = 1;
- 139   4                      }
- 140   3                      else
- 141   3                      {
- 142   4                          MusicSelect = 0;  // 循环播放音乐
- 143   4                      }
- 144   3                      break;
- 145   3      
- 146   3                  case 3:  // 纯音乐模式
- 147   3                      if(Music[MusicSelect] != 0xFF)
- 148   3                      {
- 149   4                          FreqSelect = Music[MusicSelect];
- 150   4                          MusicSelect++;
- 151   4                          Delay_ms(SPEED/4*Music[MusicSelect]);
- 152   4                          MusicSelect++;
- 153   4                          TR0 = 0;
- 154   4                          Delay_ms(5);
- 155   4                          TR0 = 1;
- 156   4                      }
- 157   3                      else
- 158   3                      {
- 159   4                          MusicSelect = 0;  // 循环播放音乐
- 160   4                      }
- 161   3                      break;
- 162   3              }
- 163   2          }
- 164   1      }
+ 117   5                              g_duty = MAX_DUTY;
+ 118   5                              g_direction = 1;
+ 119   5                          }
+ 120   4                      }
+ 121   3                      else
+ 122   3                      {
+ 123   4                          if(g_duty > MIN_DUTY + BREATH_STEP)
+ 124   4                          {
+ 125   5                              g_duty -= BREATH_STEP;
+ 126   5                          }
+ 127   4                          else
+ 128   4                          {
+ 129   5                              g_duty = MIN_DUTY;
+ 130   5                              g_direction = 0;
+ 131   5                          }
+ 132   4                      }
+ 133   3                      Delay_ms(BREATH_DELAY);
+ 134   3                      break;
+ 135   3                  
+ 136   3                  case 2:  // 常亮+音乐模式
+ 137   3                  case 3:  // 纯音乐模式
+ 138   3                      if(g_mode == 2) {
+ 139   4                          g_duty = MAX_DUTY;  // 保持LED常亮
+ 140   4                      }
+ 141   3                      
+ 142   3                      // 音乐播放逻辑
+ 143   3                      if(currentMusic[MusicSelect] != 0xFF)
+ 144   3                      {
+ 145   4                          FreqSelect = currentMusic[MusicSelect];
+ 146   4                          MusicSelect++;
+ 147   4                          
+ 148   4                          Delay_ms(SPEED/4*currentMusic[MusicSelect]);
+ 149   4                          MusicSelect++;
+ 150   4                          
+ 151   4                          TR0 = 0;
+ 152   4                          Delay_ms(5);
+ 153   4                          TR0 = 1;
+ 154   4                      }
+ 155   3                      else
+ 156   3                      {
+ 157   4                          // 切换音乐段落
+ 158   4                          if(musicPart == 0)
+ 159   4                          {
+ 160   5                              currentMusic = Music2;  // 切换到第二段
+ 161   5                              MusicSelect = 0;
+ 162   5                              musicPart = 1;
+ 163   5                          }
+ 164   4                          else
+ 165   4                          {
+ 166   5                              currentMusic = Music1;  // 返回第一段
+ 167   5                              MusicSelect = 0;
+ 168   5                              musicPart = 0;
+ 169   5                          }
+ 170   4                      }
+ 171   3                      break;
+ 172   3              }
+ 173   2          }
+ 174   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    373    ----
+   CODE SIZE        =    431    ----
+C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 4   
+
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      1       2
+   DATA SIZE        =      1       7
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

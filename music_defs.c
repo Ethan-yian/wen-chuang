@@ -15,9 +15,11 @@ unsigned int code FreqTable[]={
 // 格式：[音符, 持续时间] 依次排列
 // 音符：使用前面定义的音符代号（P, L1-L7, M1-M7, H1-H7）
 // 持续时间：以SPEED为基准的相对时值
-unsigned char code Music[]={
-    // 音符, 时值,
-    
+
+
+// 第一段音乐数据（1-19节）
+unsigned char code Music1[]={
+
 	  // 0节
 	M2,	1,
 	M3,	1,
@@ -170,7 +172,14 @@ unsigned char code Music[]={
 	M3,4,
 	M5,2,
 	H1,2,
-		
+
+    0xFF  // 结束标记
+};
+
+
+unsigned char code Music2[]={
+    // 音符, 时值,
+
 		
 		// 17节
 	H1,4,
@@ -181,7 +190,7 @@ unsigned char code Music[]={
 	M5,2,
 	H2,2,
 	
-		
+	
 		// 18节
 	H2,2,
 	M2,2,
@@ -213,8 +222,7 @@ unsigned char code Music[]={
 	M7,2,
 	H1,1,
 	H1,1,
-		
-		
+	
 		// 21节
 	H1,4,
 	P,2,
@@ -291,11 +299,7 @@ unsigned char code Music[]={
 	H2,2,
 	H1,1,
 	H1,1,
-	
-	
-		// 第二部分////////////////////////////////////////////////////////////////////////////////////
-		
-		
+
 		
 		// 20节		
 	P,2,

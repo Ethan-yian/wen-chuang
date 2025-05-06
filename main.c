@@ -2,6 +2,8 @@
 #include "music_defs.h"
 #include "config.h"
 
+#define MUSIC_PART2_START  280 
+
 // Timer0 中断服务函数 (蜂鸣器控制)
 void Timer0_Routine() interrupt 1
 {
@@ -34,9 +36,13 @@ void Timer1_ISR() interrupt 3
     }
 }
 
+
+
 void main(void)
 {
     unsigned int hold_count = 0;
+    unsigned int musicPart = 0;  // 用于记录音乐播放的部分
+    unsigned char *currentMusic = Music1; // 当前播放的音乐数据指针
     
     initSystem();  // 初始化系统
     
@@ -66,12 +72,14 @@ void main(void)
                     case 2:  // 常亮+音乐模式
                         g_duty = MAX_DUTY;  // LED常亮
                         MusicSelect = 0;  // 重置音乐播放位置
+                        musicPart = 0;    // 重置音乐部分
                         TR0 = 1;  // 启动蜂鸣器定时器
                         break;
 
                     case 3:  // 纯音乐模式
                         g_duty = 0;  // LED关闭
                         MusicSelect = 0;  // 重置音乐播放位置
+                        musicPart = 0;    // 重置音乐部分
                         TR0 = 1;  // 启动蜂鸣器定时器
                         break;
                 }
@@ -126,37 +134,39 @@ void main(void)
                 break;
             
             case 2:  // 常亮+音乐模式
-                g_duty = MAX_DUTY;  // 保持LED常亮
-                if(Music[MusicSelect] != 0xFF)
-                {
-                    FreqSelect = Music[MusicSelect];
-                    MusicSelect++;
-                    Delay_ms(SPEED/4*Music[MusicSelect]);
-                    MusicSelect++;
-                    TR0 = 0;
-                    Delay_ms(5);
-                    TR0 = 1;
-                }
-                else
-                {
-                    MusicSelect = 0;  // 循环播放音乐
-                }
-                break;
-
             case 3:  // 纯音乐模式
-                if(Music[MusicSelect] != 0xFF)
+                if(g_mode == 2) {
+                    g_duty = MAX_DUTY;  // 保持LED常亮
+                }
+                
+                // 音乐播放逻辑
+                if(currentMusic[MusicSelect] != 0xFF)
                 {
-                    FreqSelect = Music[MusicSelect];
+                    FreqSelect = currentMusic[MusicSelect];
                     MusicSelect++;
-                    Delay_ms(SPEED/4*Music[MusicSelect]);
+                    
+                    Delay_ms(SPEED/4*currentMusic[MusicSelect]);
                     MusicSelect++;
+                    
                     TR0 = 0;
                     Delay_ms(5);
                     TR0 = 1;
                 }
                 else
                 {
-                    MusicSelect = 0;  // 循环播放音乐
+                    // 切换音乐段落
+                    if(musicPart == 0)
+                    {
+                        currentMusic = Music2;  // 切换到第二段
+                        MusicSelect = 0;
+                        musicPart = 1;
+                    }
+                    else
+                    {
+                        currentMusic = Music1;  // 返回第一段
+                        MusicSelect = 0;
+                        musicPart = 0;
+                    }
                 }
                 break;
         }

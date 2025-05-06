@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   CONFIG                                                            05/06/2025 13:57:03 PAGE 1   
+C51 COMPILER V9.60.0.0   CONFIG                                                            05/06/2025 17:26:46 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE CONFIG
@@ -62,7 +62,7 @@ line level    source
   52          // Timer1 初始化 (用于LED PWM)
   53          void Timer1Init(void)
   54          {
-C51 COMPILER V9.60.0.0   CONFIG                                                            05/06/2025 13:57:03 PAGE 2   
+C51 COMPILER V9.60.0.0   CONFIG                                                            05/06/2025 17:26:46 PAGE 2   
 
   55   1          AUXR &= 0xBF;
   56   1          TMOD &= 0x0F;
