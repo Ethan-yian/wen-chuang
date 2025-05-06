@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\music_defs.obj",
+".\Objects\main.obj",
+".\Objects\config.obj" 
+TO ".\Objects\Ö÷" 
+PRINT(".\Listings\Ö÷.m51") RAMSIZE(256) 
