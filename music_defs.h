@@ -2,7 +2,8 @@
 #define __MUSIC_DEFS_H__
 
 // 音乐播放速度定义
-#define SPEED          5800    // 音乐播放速度（毫秒）
+#define SPEED_1          6200    // 《晴天》音乐播放速度（毫秒）
+#define SPEED_2          5800    // 《七里香》音乐播放速度（毫秒）
 
 // 音符与索引对应表
 // P：休止符
@@ -51,4 +52,10 @@ extern unsigned int code FreqTable[];    // 音符频率表
 
 extern unsigned char code Music1[];
 extern unsigned char code Music2[];
+extern unsigned char code Music3[];
+extern unsigned char code Music4[];
+extern unsigned char code Music5[];
+extern unsigned char code Music6[];
+extern unsigned char code Music7[];
+extern unsigned char code Music8[];
 #endif

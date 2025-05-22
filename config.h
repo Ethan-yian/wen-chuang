@@ -5,10 +5,10 @@
 
 // PWM 配置参数定义
 #define BREATH_STEP     1       // 亮度渐变步进值
-#define MIN_DUTY        0       // 最小亮度(0-255)
+#define MIN_DUTY        1       // 最小亮度(0-255)
 #define MAX_DUTY        255     // 最大亮度(0-255)
-#define BREATH_DELAY    50      // 每次改变亮度的延时(ms)
-#define HOLD_TIME       1500    // 在最亮和最暗处停留的时间(ms)
+#define BREATH_DELAY    80      // 每次改变亮度的延时(ms)
+#define HOLD_TIME       100    // 在最亮和最暗处停留的时间(ms)
 
 // 引脚定义
 sbit BUZZER = P3^3;            // 蜂鸣器引脚

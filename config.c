@@ -12,6 +12,8 @@ unsigned char g_mode = 0;         // 工作模式：
 bit g_button_previous = 1;          // 按键前一状态
 unsigned char FreqSelect = 0, MusicSelect = 0;
 
+
+
 // 系统初始化函数
 void initSystem(void)
 {

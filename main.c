@@ -2,16 +2,14 @@
 #include "music_defs.h"
 #include "config.h"
 
-#define MUSIC_PART2_START  280 
-
 // Timer0 中断服务函数 (蜂鸣器控制)
 void Timer0_Routine() interrupt 1
 {
-    if(FreqTable[FreqSelect])
+    if(FreqTable[FreqSelect])    //如果不是休止符
     {
-        TL0 = FreqTable[FreqSelect]%256;
-        TH0 = FreqTable[FreqSelect]/256;
-        BUZZER = !BUZZER;
+        TL0 = FreqTable[FreqSelect]%256;        //设置定时初值
+        TH0 = FreqTable[FreqSelect]/256;        //设置定时初值
+        BUZZER=!BUZZER;    //翻转蜂鸣器IO口
     }
 }
 
@@ -42,7 +40,7 @@ void main(void)
 {
     unsigned int hold_count = 0;
     unsigned int musicPart = 0;  // 用于记录音乐播放的部分
-    unsigned char *currentMusic = Music1; // 当前播放的音乐数据指针
+    unsigned char code *currentMusic = Music1; // 当前播放的音乐数据指针
     
     initSystem();  // 初始化系统
     
@@ -73,13 +71,15 @@ void main(void)
                         g_duty = MAX_DUTY;  // LED常亮
                         MusicSelect = 0;  // 重置音乐播放位置
                         musicPart = 0;    // 重置音乐部分
+                        currentMusic = Music1; // 重置到第一段音乐
                         TR0 = 1;  // 启动蜂鸣器定时器
                         break;
 
-                    case 3:  // 纯音乐模式
-                        g_duty = 0;  // LED关闭
+                    case 3:  // 新增模式3：循环播放第5-8段音乐
+                        g_duty = MAX_DUTY;  // LED常亮
                         MusicSelect = 0;  // 重置音乐播放位置
-                        musicPart = 0;    // 重置音乐部分
+                        musicPart = 4;    // 从第5段开始
+                        currentMusic = Music5; // 从第5段音乐开始
                         TR0 = 1;  // 启动蜂鸣器定时器
                         break;
                 }
@@ -133,19 +133,16 @@ void main(void)
                 Delay_ms(BREATH_DELAY);
                 break;
             
-            case 2:  // 常亮+音乐模式
-            case 3:  // 纯音乐模式
-                if(g_mode == 2) {
-                    g_duty = MAX_DUTY;  // 保持LED常亮
-                }
-                
+            case 2:  // 纯音乐模式
+                g_duty = MAX_DUTY;  // 保持LED常亮
+
                 // 音乐播放逻辑
                 if(currentMusic[MusicSelect] != 0xFF)
                 {
                     FreqSelect = currentMusic[MusicSelect];
                     MusicSelect++;
                     
-                    Delay_ms(SPEED/4*currentMusic[MusicSelect]);
+                    Delay_ms(SPEED_1/4*currentMusic[MusicSelect]);
                     MusicSelect++;
                     
                     TR0 = 0;
@@ -155,17 +152,65 @@ void main(void)
                 else
                 {
                     // 切换音乐段落
-                    if(musicPart == 0)
+                    musicPart++;
+                    MusicSelect = 0;
+                    
+                    switch(musicPart)
                     {
-                        currentMusic = Music2;  // 切换到第二段
-                        MusicSelect = 0;
-                        musicPart = 1;
+                        case 1:
+                            currentMusic = Music2;
+                            break;
+                        case 2:
+                            currentMusic = Music3;
+                            break;
+                        case 3:
+                            currentMusic = Music4;
+                            break;
+                        default:
+                            currentMusic = Music1;
+                            musicPart = 0;
+                            break;
                     }
-                    else
+                }
+                break;
+
+            case 3:  
+                g_duty = MAX_DUTY;  // 保持LED常亮
+
+                // 音乐播放逻辑
+                if(currentMusic[MusicSelect] != 0xFF)
+                {
+                    FreqSelect = currentMusic[MusicSelect];
+                    MusicSelect++;
+                    
+                    Delay_ms(SPEED_2/4*currentMusic[MusicSelect]);
+                    MusicSelect++;
+                    
+                    TR0 = 0;
+                    Delay_ms(5);
+                    TR0 = 1;
+                }
+                else
+                {
+                    // 切换音乐段落
+                    musicPart++;
+                    MusicSelect = 0;
+                    
+                    switch(musicPart)
                     {
-                        currentMusic = Music1;  // 返回第一段
-                        MusicSelect = 0;
-                        musicPart = 0;
+                        case 5:
+                            currentMusic = Music6;
+                            break;
+                        case 6:
+                            currentMusic = Music7;
+                            break;
+                        case 7:
+                            currentMusic = Music8;
+                            break;
+                        default:
+                            currentMusic = Music5;
+                            musicPart = 4;
+                            break;
                     }
                 }
                 break;

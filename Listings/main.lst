@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              05/22/2025 23:18:33 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
@@ -12,86 +12,86 @@ line level    source
    2          #include "music_defs.h"
    3          #include "config.h"
    4          
-   5          #define MUSIC_PART2_START  280 
-   6          
-   7          // Timer0 中断服务函数 (蜂鸣器控制)
-   8          void Timer0_Routine() interrupt 1
-   9          {
-  10   1          if(FreqTable[FreqSelect])
-  11   1          {
-  12   2              TL0 = FreqTable[FreqSelect]%256;
-  13   2              TH0 = FreqTable[FreqSelect]/256;
-  14   2              BUZZER = !BUZZER;
-  15   2          }
-  16   1      }
-  17          
-  18          // Timer1 中断服务函数 (LED PWM控制)
-  19          void Timer1_ISR() interrupt 3
-  20          {
-  21   1          static unsigned char count = 0;
-  22   1          
-  23   1          if(count < g_duty)
-  24   1          {
-  25   2              P3 |= 0x04;     // LED点亮
-  26   2          }
-  27   1          else
-  28   1          {
-  29   2              P3 &= ~0x04;    // LED熄灭
-  30   2          }
-  31   1          
-  32   1          count++;
-  33   1          if(count >= 255)
-  34   1          {
-  35   2              count = 0;
-  36   2          }
-  37   1      }
+   5          // Timer0 中断服务函数 (蜂鸣器控制)
+   6          void Timer0_Routine() interrupt 1
+   7          {
+   8   1          if(FreqTable[FreqSelect])    //如果不是休止符
+   9   1          {
+  10   2              TL0 = FreqTable[FreqSelect]%256;        //设置定时初值
+  11   2              TH0 = FreqTable[FreqSelect]/256;        //设置定时初值
+  12   2              BUZZER=!BUZZER;    //翻转蜂鸣器IO口
+  13   2          }
+  14   1      }
+  15          
+  16          // Timer1 中断服务函数 (LED PWM控制)
+  17          void Timer1_ISR() interrupt 3
+  18          {
+  19   1          static unsigned char count = 0;
+  20   1          
+  21   1          if(count < g_duty)
+  22   1          {
+  23   2              P3 |= 0x04;     // LED点亮
+  24   2          }
+  25   1          else
+  26   1          {
+  27   2              P3 &= ~0x04;    // LED熄灭
+  28   2          }
+  29   1          
+  30   1          count++;
+  31   1          if(count >= 255)
+  32   1          {
+  33   2              count = 0;
+  34   2          }
+  35   1      }
+  36          
+  37          
   38          
-  39          
-  40          
-  41          void main(void)
-  42          {
-  43   1          unsigned int hold_count = 0;
-  44   1          unsigned int musicPart = 0;  // 用于记录音乐播放的部分
-  45   1          unsigned char *currentMusic = Music1; // 当前播放的音乐数据指针
+  39          void main(void)
+  40          {
+  41   1          unsigned int hold_count = 0;
+  42   1          unsigned int musicPart = 0;  // 用于记录音乐播放的部分
+  43   1          unsigned char code *currentMusic = Music1; // 当前播放的音乐数据指针
+  44   1          
+  45   1          initSystem();  // 初始化系统
   46   1          
-  47   1          initSystem();  // 初始化系统
-  48   1          
-  49   1          while(1)
-  50   1          {
-  51   2              // 按键检测和模式切换（带消抖）
-  52   2              if ((P5 & 0x20) == 0)  // 按键被按下
-  53   2              {
-  54   3                  if (g_button_previous == 1)
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 2   
+  47   1          while(1)
+  48   1          {
+  49   2              // 按键检测和模式切换（带消抖）
+  50   2              if ((P5 & 0x20) == 0)  // 按键被按下
+  51   2              {
+  52   3                  if (g_button_previous == 1)
+  53   3                  {
+  54   4                      g_mode = (g_mode + 1) % 4;  // 在四种模式间循环
+C51 COMPILER V9.60.0.0   MAIN                                                              05/22/2025 23:18:33 PAGE 2   
 
-  55   3                  {
-  56   4                      g_mode = (g_mode + 1) % 4;  // 在四种模式间循环
-  57   4                      
-  58   4                      // 模式切换处理
-  59   4                      switch(g_mode)
-  60   4                      {
-  61   5                          case 0:  // 常亮模式
-  62   5                              g_duty = MAX_DUTY;
-  63   5                              TR0 = 0;  // 停止蜂鸣器定时器
-  64   5                              BUZZER = 0;
-  65   5                              break;
-  66   5                          
-  67   5                          case 1:  // 呼吸灯模式
-  68   5                              TR0 = 0;  // 停止蜂鸣器定时器
-  69   5                              BUZZER = 0;
-  70   5                              break;
-  71   5                          
-  72   5                          case 2:  // 常亮+音乐模式
-  73   5                              g_duty = MAX_DUTY;  // LED常亮
-  74   5                              MusicSelect = 0;  // 重置音乐播放位置
-  75   5                              musicPart = 0;    // 重置音乐部分
-  76   5                              TR0 = 1;  // 启动蜂鸣器定时器
-  77   5                              break;
-  78   5      
-  79   5                          case 3:  // 纯音乐模式
-  80   5                              g_duty = 0;  // LED关闭
-  81   5                              MusicSelect = 0;  // 重置音乐播放位置
-  82   5                              musicPart = 0;    // 重置音乐部分
+  55   4                      
+  56   4                      // 模式切换处理
+  57   4                      switch(g_mode)
+  58   4                      {
+  59   5                          case 0:  // 常亮模式
+  60   5                              g_duty = MAX_DUTY;
+  61   5                              TR0 = 0;  // 停止蜂鸣器定时器
+  62   5                              BUZZER = 0;
+  63   5                              break;
+  64   5                          
+  65   5                          case 1:  // 呼吸灯模式
+  66   5                              TR0 = 0;  // 停止蜂鸣器定时器
+  67   5                              BUZZER = 0;
+  68   5                              break;
+  69   5                          
+  70   5                          case 2:  // 常亮+音乐模式
+  71   5                              g_duty = MAX_DUTY;  // LED常亮
+  72   5                              MusicSelect = 0;  // 重置音乐播放位置
+  73   5                              musicPart = 0;    // 重置音乐部分
+  74   5                              currentMusic = Music1; // 重置到第一段音乐
+  75   5                              TR0 = 1;  // 启动蜂鸣器定时器
+  76   5                              break;
+  77   5      
+  78   5                          case 3:  // 新增模式3：循环播放第5-8段音乐
+  79   5                              g_duty = MAX_DUTY;  // LED常亮
+  80   5                              MusicSelect = 0;  // 重置音乐播放位置
+  81   5                              musicPart = 4;    // 从第5段开始
+  82   5                              currentMusic = Music5; // 从第5段音乐开始
   83   5                              TR0 = 1;  // 启动蜂鸣器定时器
   84   5                              break;
   85   5                      }
@@ -126,7 +126,7 @@ line level    source
  114   4                          g_duty += BREATH_STEP;
  115   4                          if(g_duty >= MAX_DUTY)
  116   4                          {
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 3   
+C51 COMPILER V9.60.0.0   MAIN                                                              05/22/2025 23:18:33 PAGE 3   
 
  117   5                              g_duty = MAX_DUTY;
  118   5                              g_direction = 1;
@@ -147,55 +147,100 @@ line level    source
  133   3                      Delay_ms(BREATH_DELAY);
  134   3                      break;
  135   3                  
- 136   3                  case 2:  // 常亮+音乐模式
- 137   3                  case 3:  // 纯音乐模式
- 138   3                      if(g_mode == 2) {
- 139   4                          g_duty = MAX_DUTY;  // 保持LED常亮
- 140   4                      }
- 141   3                      
- 142   3                      // 音乐播放逻辑
- 143   3                      if(currentMusic[MusicSelect] != 0xFF)
- 144   3                      {
- 145   4                          FreqSelect = currentMusic[MusicSelect];
+ 136   3                  case 2:  // 纯音乐模式
+ 137   3                      g_duty = MAX_DUTY;  // 保持LED常亮
+ 138   3      
+ 139   3                      // 音乐播放逻辑
+ 140   3                      if(currentMusic[MusicSelect] != 0xFF)
+ 141   3                      {
+ 142   4                          FreqSelect = currentMusic[MusicSelect];
+ 143   4                          MusicSelect++;
+ 144   4                          
+ 145   4                          Delay_ms(SPEED_1/4*currentMusic[MusicSelect]);
  146   4                          MusicSelect++;
  147   4                          
- 148   4                          Delay_ms(SPEED/4*currentMusic[MusicSelect]);
- 149   4                          MusicSelect++;
- 150   4                          
- 151   4                          TR0 = 0;
- 152   4                          Delay_ms(5);
- 153   4                          TR0 = 1;
- 154   4                      }
- 155   3                      else
- 156   3                      {
- 157   4                          // 切换音乐段落
- 158   4                          if(musicPart == 0)
+ 148   4                          TR0 = 0;
+ 149   4                          Delay_ms(5);
+ 150   4                          TR0 = 1;
+ 151   4                      }
+ 152   3                      else
+ 153   3                      {
+ 154   4                          // 切换音乐段落
+ 155   4                          musicPart++;
+ 156   4                          MusicSelect = 0;
+ 157   4                          
+ 158   4                          switch(musicPart)
  159   4                          {
- 160   5                              currentMusic = Music2;  // 切换到第二段
- 161   5                              MusicSelect = 0;
- 162   5                              musicPart = 1;
- 163   5                          }
- 164   4                          else
- 165   4                          {
- 166   5                              currentMusic = Music1;  // 返回第一段
- 167   5                              MusicSelect = 0;
- 168   5                              musicPart = 0;
- 169   5                          }
- 170   4                      }
- 171   3                      break;
- 172   3              }
- 173   2          }
- 174   1      }
+ 160   5                              case 1:
+ 161   5                                  currentMusic = Music2;
+ 162   5                                  break;
+ 163   5                              case 2:
+ 164   5                                  currentMusic = Music3;
+ 165   5                                  break;
+ 166   5                              case 3:
+ 167   5                                  currentMusic = Music4;
+ 168   5                                  break;
+ 169   5                              default:
+ 170   5                                  currentMusic = Music1;
+ 171   5                                  musicPart = 0;
+ 172   5                                  break;
+ 173   5                          }
+ 174   4                      }
+ 175   3                      break;
+ 176   3      
+ 177   3                  case 3:  
+ 178   3                      g_duty = MAX_DUTY;  // 保持LED常亮
+C51 COMPILER V9.60.0.0   MAIN                                                              05/22/2025 23:18:33 PAGE 4   
+
+ 179   3      
+ 180   3                      // 音乐播放逻辑
+ 181   3                      if(currentMusic[MusicSelect] != 0xFF)
+ 182   3                      {
+ 183   4                          FreqSelect = currentMusic[MusicSelect];
+ 184   4                          MusicSelect++;
+ 185   4                          
+ 186   4                          Delay_ms(SPEED_2/4*currentMusic[MusicSelect]);
+ 187   4                          MusicSelect++;
+ 188   4                          
+ 189   4                          TR0 = 0;
+ 190   4                          Delay_ms(5);
+ 191   4                          TR0 = 1;
+ 192   4                      }
+ 193   3                      else
+ 194   3                      {
+ 195   4                          // 切换音乐段落
+ 196   4                          musicPart++;
+ 197   4                          MusicSelect = 0;
+ 198   4                          
+ 199   4                          switch(musicPart)
+ 200   4                          {
+ 201   5                              case 5:
+ 202   5                                  currentMusic = Music6;
+ 203   5                                  break;
+ 204   5                              case 6:
+ 205   5                                  currentMusic = Music7;
+ 206   5                                  break;
+ 207   5                              case 7:
+ 208   5                                  currentMusic = Music8;
+ 209   5                                  break;
+ 210   5                              default:
+ 211   5                                  currentMusic = Music5;
+ 212   5                                  musicPart = 4;
+ 213   5                                  break;
+ 214   5                          }
+ 215   4                      }
+ 216   3                      break;
+ 217   3              }
+ 218   2          }
+ 219   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    431    ----
-C51 COMPILER V9.60.0.0   MAIN                                                              05/06/2025 17:26:45 PAGE 4   
-
+   CODE SIZE        =    592    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      1       7
+   DATA SIZE        =      1       6
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.
